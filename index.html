@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>决策树分类规则</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e84393;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --text: #34495e;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #74b9ff 0%, #fd79a8 100%);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            color: var(--primary);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(116, 185, 255, 0.1) 0%, rgba(253, 121, 168, 0.1) 70%);
+            z-index: 1;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(90deg, #2c3e50, #3498db, #e84393);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary);
+            border: none;
+            padding: 18px 30px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 280px;
+            justify-content: center;
+        }
+        
+        .nav-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            background: white;
+            color: var(--accent);
+        }
+        
+        .nav-btn.active {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .content-section {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        h2 {
+            color: var(--primary);
+            border-bottom: 3px solid var(--secondary);
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        h3 {
+            color: var(--secondary);
+            margin: 25px 0 15px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--secondary);
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .algorithm-box {
+            background: #e8f4fc;
+            border: 1px solid #a1c4fd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+        
+        li {
+            margin-bottom: 10px;
+            padding-left: 5px;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, #fff9c4 0%, #fff9c4 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .icon {
+            font-size: 1.2em;
+        }
+        
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+        
+        .back-btn:hover {
+            background: var(--secondary);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tree-diagram {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .tree {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .node {
+            background: var(--secondary);
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px;
+            box-shadow: var(--shadow);
+            font-weight: bold;
+        }
+        
+        .branch {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+        
+        .formula {
+            background: #f8f9fa;
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .nav-btn {
+                width: 100%;
+                min-width: auto;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-project-diagram icon"></i> 决策树分类规则</h1>
+            <p class="subtitle">机器学习中重要的分类算法知识整理</p>
+        </header>
+        
+        <div class="nav-container">
+            <button class="nav-btn active" onclick="showSection('section1')">
+                <i class="fas fa-seedling icon"></i> 11.1 决策树分类规则的基础知识
+            </button>
+            <button class="nav-btn" onclick="showSection('section2')">
+                <i class="fas fa-code-branch icon"></i> 11.2 ID3算法
+            </button>
+            <button class="nav-btn" onclick="showSection('section3')">
+                <i class="fas fa-tree icon"></i> 11.3 其他常用的决策树分类规则算法
+            </button>
+        </div>
+        
+        <div id="section1" class="content-section active">
+            <h2><i class="fas fa-seedling icon"></i> 11.1 决策树分类规则的基础知识</h2>
+            
+            <div class="card">
+                <h3><i class="fas fa-question-circle icon"></i> 11.1.1 问题提出</h3>
+                <p>在机器学习领域，分类问题是一个核心任务，旨在根据已知特征对数据进行分类。决策树是一种简单而强大的分类方法，它通过一系列规则对数据进行划分，形成树状结构。</p>
+                
+                <div class="tree-diagram">
+                    <div class="tree">
+                        <div class="node">根节点</div>
+                        <div class="branch">
+                            <div class="node">内部节点</div>
+                            <div class="node">内部节点</div>
+                        </div>
+                        <div class="branch">
+                            <div class="node">叶节点</div>
+                            <div class="node">叶节点</div>
+                            <div class="node">叶节点</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <p>决策树的主要优势在于：</p>
+                <ul>
+                    <li>模型直观，易于理解和解释</li>
+                    <li>能够处理数值型和类别型数据</li>
+                    <li>不需要复杂的特征标准化或归一化</li>
+                    <li>能够处理多输出问题</li>
+                </ul>
+                <p>然而，决策树也面临过拟合、对数据微小变化敏感等问题，这些问题催生了对决策树算法的各种改进。</p>
+            </div>
+            
+            <div class="card">
+                <h3><i class="fas fa-sitemap icon"></i> 11.1.2 决策树的相关概念</h3>
+                <p>决策树由节点和有向边组成，主要包括以下概念：</p>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-list icon"></i> 决策树基本结构</h4>
+                    <ul>
+                        <li><span class="highlight">根节点</span>：代表整个数据集的起始点</li>
+                        <li><span class="highlight">内部节点</span>：代表一个特征或属性</li>
+                        <li><span class="highlight">叶节点</span>：代表决策结果（类别）</li>
+                        <li><span class="highlight">分支</span>：代表特征的不同取值</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-code-branch icon"></i> 决策树构建过程</h4>
+                    <ol>
+                        <li>特征选择：选择最佳划分特征</li>
+                        <li>决策树生成：根据特征划分数据集</li>
+                        <li>决策树剪枝：防止过拟合，提高泛化能力</li>
+                    </ol>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-chart-line icon"></i> 关键指标</h4>
+                    <ul>
+                        <li><span class="highlight">信息增益</span>：特征划分前后信息熵的减少量</li>
+                        <li><span class="highlight">信息增益比</span>：信息增益与特征固有值的比值</li>
+                        <li><span class="highlight">基尼指数</span>：数据不纯度的度量</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <button class="back-btn" onclick="showSection('home')">
+                <i class="fas fa-arrow-left icon"></i> 返回主菜单
+            </button>
+        </div>
+        
+        <div id="section2" class="content-section">
+            <h2><i class="fas fa-code-branch icon"></i> 11.2 ID3算法</h2>
+            
+            <div class="card">
+                <h3><i class="fas fa-cogs icon"></i> 11.2.1 算法改进</h3>
+                <p>ID3（Iterative Dichotomiser 3）算法是决策树学习中的经典算法，由Ross Quinlan于1986年提出。它使用信息增益作为特征选择的标准。</p>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-brain icon"></i> ID3算法核心思想</h4>
+                    <p>ID3算法采用自顶向下的贪婪搜索方法，通过递归方式构建决策树：</p>
+                    <ol>
+                        <li>从根节点开始，计算所有特征的信息增益</li>
+                        <li>选择信息增益最大的特征作为当前节点的划分特征</li>
+                        <li>根据该特征的不同取值建立子节点</li>
+                        <li>对每个子节点递归调用上述过程，直到满足停止条件</li>
+                    </ol>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-calculator icon"></i> 信息增益计算</h4>
+                    <p>信息增益基于信息熵的概念，公式如下：</p>
+                    <div class="formula">
+                        信息熵：H(D) = -Σ p<sub>i</sub> log<sub>2</sub> p<sub>i</sub><br>
+                        条件熵：H(D|A) = Σ |D<sub>v</sub>|/|D| H(D<sub>v</sub>)<br>
+                        信息增益：g(D, A) = H(D) - H(D|A)
+                    </div>
+                    <p>其中，D是数据集，A是特征，D<sub>v</sub>是特征A取值为v的子集。</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3><i class="fas fa-list-ol icon"></i> 11.2.2 几种常用的决策树分类规则算法</h3>
+                <p>除了ID3算法，决策树家族还有其他重要成员：</p>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-leaf icon"></i> C4.5算法</h4>
+                    <p>C4.5是ID3的改进算法，主要改进包括：</p>
+                    <ul>
+                        <li>使用信息增益比替代信息增益，解决信息增益偏向取值较多特征的问题</li>
+                        <li>能够处理连续值特征</li>
+                        <li>能够处理缺失值</li>
+                        <li>引入了剪枝技术，防止过拟合</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-tree icon"></i> CART算法</h4>
+                    <p>CART（Classification and Regression Trees）算法可以用于分类和回归：</p>
+                    <ul>
+                        <li>分类树使用基尼指数作为划分标准</li>
+                        <li>回归树使用平方误差最小化作为划分标准</li>
+                        <li>生成的决策树是二叉树</li>
+                        <li>具有强大的剪枝策略</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <button class="back-btn" onclick="showSection('home')">
+                <i class="fas fa-arrow-left icon"></i> 返回主菜单
+            </button>
+        </div>
+        
+        <div id="section3" class="content-section">
+            <h2><i class="fas fa-tree icon"></i> 11.3 其他常用的决策树分类规则算法</h2>
+            
+            <div class="card">
+                <h3><i class="fas fa-tools icon"></i> 11.3.1 算法改进</h3>
+                <p>随着机器学习的发展，决策树算法也在不断改进，主要改进方向包括：</p>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-layer-group icon"></i> 集成学习方法</h4>
+                    <p>通过组合多个决策树提高模型性能：</p>
+                    <ul>
+                        <li><span class="highlight">Bagging</span>：通过自助采样构建多个基学习器，如随机森林</li>
+                        <li><span class="highlight">Boosting</span>：通过序列化方式构建基学习器，每个学习器关注前一个学习器的错误，如GBDT、XGBoost</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-sitemap icon"></i> 多变量决策树</h4>
+                    <p>传统决策树是单变量决策树，每个节点只使用一个特征。多变量决策树使用多个特征的线性组合进行划分，可以产生更紧凑的决策树。</p>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-sync-alt icon"></i> 增量学习决策树</h4>
+                    <p>能够在不重新训练整个模型的情况下，根据新数据更新决策树结构，适用于数据流环境。</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3><i class="fas fa-list-ul icon"></i> 11.3.2 几种常用的决策树分类规则算法</h3>
+                <p>除了前面提到的算法，还有一些其他重要的决策树算法：</p>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-chart-bar icon"></i> CHAID算法</h4>
+                    <p>CHAID（Chi-squared Automatic Interaction Detection）算法：</p>
+                    <ul>
+                        <li>使用卡方检验作为特征选择标准</li>
+                        <li>可以产生多分支的决策树</li>
+                        <li>主要用于分类问题，特别适合处理类别型特征</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-bolt icon"></i> QUEST算法</h4>
+                    <p>QUEST（Quick, Unbiased, Efficient Statistical Tree）算法：</p>
+                    <ul>
+                        <li>旨在产生无偏的决策树</li>
+                        <li>使用统计检验选择划分特征</li>
+                        <li>对数值型和类别型特征都能有效处理</li>
+                    </ul>
+                </div>
+                
+                <div class="algorithm-box">
+                    <h4><i class="fas fa-forest icon"></i> 随机森林</h4>
+                    <p>随机森林是Bagging方法的代表：</p>
+                    <ul>
+                        <li>通过自助采样构建多个决策树</li>
+                        <li>在节点划分时随机选择特征子集</li>
+                        <li>通过投票或平均产生最终结果</li>
+                        <li>具有很好的抗过拟合能力</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <button class="back-btn" onclick="showSection('home')">
+                <i class="fas fa-arrow-left icon"></i> 返回主菜单
+            </button>
+        </div>
+        
+        <footer>
+            <p>决策树分类规则知识整理 &copy; 2023 | 机器学习算法系列</p>
+        </footer>
+    </div>
+    
+    <script>
+        function showSection(sectionId) {
+            // 隐藏所有内容区域
+            const contents = document.getElementsByClassName('content-section');
+            for (let i = 0; i < contents.length; i++) {
+                contents[i].classList.remove('active');
+            }
+            
+            // 显示选中的内容区域
+            if (sectionId !== 'home') {
+                document.getElementById(sectionId).classList.add('active');
+            }
+            
+            // 更新导航按钮状态
+            const buttons = document.getElementsByClassName('nav-btn');
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
+            
+            // 根据sectionId设置对应的按钮为active
+            if (sectionId === 'section1') {
+                buttons[0].classList.add('active');
+            } else if (sectionId === 'section2') {
+                buttons[1].classList.add('active');
+            } else if (sectionId === 'section3') {
+                buttons[2].classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
